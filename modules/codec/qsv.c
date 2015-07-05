@@ -524,8 +524,7 @@ static int Open(vlc_object_t *this)
         if (initialized) {
             msg_Err(enc, "Framerate and picture dimensions must be non-zero");
             goto error;
-        }
-        else {
+        } else {
             initialized = 1;
             return VLC_SUCCESS;
         }
