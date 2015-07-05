@@ -408,16 +408,11 @@ static int Open(vlc_object_t *this)
     uint8_t *p_extra;
     size_t i_extra;
     uint8_t nals[128];
+    static int initialized = 0;
 
     if (enc->fmt_out.i_codec != VLC_CODEC_H264 &&
         enc->fmt_out.i_codec != VLC_CODEC_MPGV && !enc->b_force)
         return VLC_EGENERIC;
-
-    if (!enc->fmt_in.video.i_visible_height || !enc->fmt_in.video.i_visible_width ||
-        !enc->fmt_in.video.i_frame_rate || !enc->fmt_in.video.i_frame_rate_base) {
-        msg_Err(enc, "Framerate and picture dimensions must be non-zero");
-        return VLC_EGENERIC;
-    }
 
     /* Allocate the memory needed to store the decoder's structure */
     sys = calloc(1, sizeof(encoder_sys_t));
@@ -522,6 +517,18 @@ static int Open(vlc_object_t *this)
             sys->params.mfx.Convergence = var_InheritInteger(enc, SOUT_CFG_PREFIX "convergence");
         } else if (sys->params.mfx.RateControlMethod == MFX_RATECONTROL_VBR)
             sys->params.mfx.MaxKbps = var_InheritInteger(enc, SOUT_CFG_PREFIX "bitrate-max");
+    }
+
+    if (!enc->fmt_in.video.i_visible_height || !enc->fmt_in.video.i_visible_width ||
+        !enc->fmt_in.video.i_frame_rate || !enc->fmt_in.video.i_frame_rate_base) {
+        if (initialized) {
+            msg_Err(enc, "Framerate and picture dimensions must be non-zero");
+            goto error;
+        }
+        else {
+            initialized = 1;
+            return VLC_SUCCESS;
+        }
     }
 
     /* Initializing MFX_Encoder */
